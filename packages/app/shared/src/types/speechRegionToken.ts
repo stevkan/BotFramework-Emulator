@@ -31,9 +31,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-export interface SpeechTokenInfo {
+export interface SpeechRegionToken {
   access_Token: string;
   region: string;
-  error: string;
-  error_Description: string;
 }

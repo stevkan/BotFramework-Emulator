@@ -33,7 +33,7 @@
 
 import { URL, URLSearchParams } from 'url';
 
-import { BotEndpointOptions, SpeechTokenInfo } from '@bfemulator/sdk-shared';
+import { BotEndpointOptions, SpeechTokenInfo, SpeechRegionToken } from '@bfemulator/sdk-shared';
 import * as HttpStatus from 'http-status-codes';
 
 import { authentication, speech as speechEndpoint, usGovernmentAuthentication } from '../authEndpoints';
@@ -48,6 +48,7 @@ export default class BotEndpoint {
   public speechToken?: string;
   public appId?: string;
   public appPassword?: string;
+  public speechRegionToken?: SpeechRegionToken;
 
   constructor(
     public id?: string,
@@ -63,9 +64,12 @@ export default class BotEndpoint {
     this.appPassword = msaPassword;
   }
 
-  public async getSpeechToken(refresh: boolean = false, duration: number = 10) {
+  public async getSpeechToken(refresh: boolean = false, duration: number = 10): Promise<SpeechRegionToken> {
     if (this.speechToken && !refresh) {
-      return this.speechToken;
+      return {
+        access_Token: this.speechToken,
+        region: this.speechRegionToken.region,
+      };
     }
 
     if (!this.msaAppId || !this.msaPassword) {
@@ -73,15 +77,18 @@ export default class BotEndpoint {
     }
 
     const query = new URLSearchParams({ goodForInMinutes: duration } as any);
-    const res = await this.fetchWithAuth(new URL(`?${query.toString()}`, speechEndpoint.tokenEndpoint).toString());
+    const res = await this.fetchWithAuth(new URL(`?${query.toString()}`, speechEndpoint.tokenEndpoint2).toString());
 
     if (statusCodeFamily(res.status, 200)) {
       const body = (await res.json()) as SpeechTokenInfo;
 
       if (body.access_Token) {
-        this.speechToken = body.access_Token;
+        this.speechRegionToken = {
+          access_Token: body.access_Token,
+          region: body.region,
+        };
 
-        return this.speechToken;
+        return this.speechRegionToken;
       } else {
         throw new Error(body.error || 'could not retrieve speech token');
       }

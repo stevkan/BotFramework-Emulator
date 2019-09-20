@@ -53,3 +53,4 @@ export * from './logger';
 export * from './speechToken';
 export * from './transcriptRecord';
 export * from './user';
+export * from './speechRegionToken';

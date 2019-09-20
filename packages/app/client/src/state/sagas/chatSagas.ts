@@ -33,10 +33,10 @@
 import * as Electron from 'electron';
 import { MenuItemConstructorOptions } from 'electron';
 import { Activity } from 'botframework-schema';
-import { SharedConstants, ValueTypes, newNotification } from '@bfemulator/app-shared';
+import { SharedConstants, ValueTypes, newNotification, SpeechRegionToken } from '@bfemulator/app-shared';
 import { CommandServiceImpl, CommandServiceInstance, ConversationService } from '@bfemulator/sdk-shared';
 import { IEndpointService } from 'botframework-config/lib/schema';
-import { createCognitiveServicesBingSpeechPonyfillFactory } from 'botframework-webchat';
+import { createCognitiveServicesSpeechServicesPonyfillFactory } from 'botframework-webchat';
 import { createStore as createWebChatStore } from 'botframework-webchat-core';
 import { call, ForkEffect, put, select, takeEvery, takeLatest } from 'redux-saga/effects';
 
@@ -157,9 +157,9 @@ export class ChatSagas {
     // If an existing factory is found, refresh the token
     const existingFactory: string = yield select(getWebSpeechFactoryForDocumentId, documentId);
     const { GetSpeechToken: command } = SharedConstants.Commands.Emulator;
-    let token;
+    let speechRegionToken: SpeechRegionToken;
     try {
-      token = yield call(
+      speechRegionToken = yield call(
         [ChatSagas.commandService, ChatSagas.commandService.remoteCall],
         command,
         endpoint.id,
@@ -168,9 +168,11 @@ export class ChatSagas {
     } catch (e) {
       // No-op - this appId/pass combo is not provisioned to use the speech api
     }
-    if (token) {
-      const factory = yield call(createCognitiveServicesBingSpeechPonyfillFactory, {
-        authorizationToken: token,
+
+    if (speechRegionToken) {
+      const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
+        authorizationToken: speechRegionToken.access_Token,
+        region: speechRegionToken.region,
       });
       yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
     }
