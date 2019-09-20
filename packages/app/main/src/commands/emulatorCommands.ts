@@ -171,6 +171,7 @@ export class EmulatorCommands {
   @Command(Commands.GetSpeechToken)
   protected getSpeechToken(endpointId: string, refresh: boolean) {
     const endpoint = Emulator.getInstance().framework.server.botEmulator.facilities.endpoints.get(endpointId);
+
     return endpoint && endpoint.getSpeechToken(refresh);
   }
 
