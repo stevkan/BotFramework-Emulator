@@ -42,7 +42,7 @@ import statusCodeFamily from '../utils/statusCodeFamily';
 // We will refresh if the token is going to expire within 5 minutes
 const TIME_TO_REFRESH = 5 * 60 * 1000;
 // We will refresh if the token is going to expire within 5 minutes
-const TIME_TO_REFRESH_SPEECH_TOKEN = 480000; // Refresh speech token 5 minutes before it expires (5 * 60 * 1000)
+const TIME_TO_REFRESH_SPEECH_TOKEN = 300000; // Refresh speech token 5 minutes before it expires (5 * 60 * 1000)
 const SPEECH_TOKEN_LIFE = 600000; // Token only valid for 10 Minutes (10 * 60 * 1000)
 
 export default class BotEndpoint {
