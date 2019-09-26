@@ -64,16 +64,10 @@ export default class BotEndpoint {
     this.appPassword = msaPassword;
   }
 
-  private isTokenExpiringSoon(): boolean {
+  private willTokenExpireWithin(millisecondsToExpire: number): boolean {
     const currentDateTime = new Date();
-    const timeFromNowMilliseconds = currentDateTime.getTime() + this.speechRegionToken.tokenLife * 0.5;
+    const timeFromNowMilliseconds = currentDateTime.getTime() + millisecondsToExpire;
     return timeFromNowMilliseconds >= this.speechRegionToken.expiry;
-  }
-
-  private isTokenExpired(): boolean {
-    const currentDateTime = new Date();
-    const dateTimeUtcNowMilliseconds = currentDateTime.getTime();
-    return dateTimeUtcNowMilliseconds >= this.speechRegionToken.expiry;
   }
 
   private renewTokenBeforeExpiry() {
@@ -108,8 +102,13 @@ export default class BotEndpoint {
   }
 
   public async getSpeechToken(refresh: boolean = false): Promise<SpeechRegionToken> {
-    if (this.speechRegionToken && !refresh && !this.isTokenExpired()) {
-      if (this.isTokenExpiringSoon()) {
+    if (!this.msaAppId || !this.msaPassword) {
+      throw new Error('bot must have Microsoft App ID and password');
+    }
+
+    if (this.speechRegionToken && !refresh && !this.willTokenExpireWithin(0)) {
+      if (this.willTokenExpireWithin(this.speechRegionToken.tokenLife * 0.5)) {
+        // Check if token is past half its life
         this.renewTokenBeforeExpiry(); // Call and forget. No await since valid token still available
       }
 
@@ -119,10 +118,6 @@ export default class BotEndpoint {
         expiry: this.speechRegionToken.expiry,
         tokenLife: this.speechRegionToken.tokenLife,
       };
-    }
-
-    if (!this.msaAppId || !this.msaPassword) {
-      throw new Error('bot must have Microsoft App ID and password');
     }
 
     return await this.getTokenAsync();
