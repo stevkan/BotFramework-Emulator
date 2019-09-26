@@ -70,10 +70,9 @@ export default class BotEndpoint {
     return timeFromNowMilliseconds >= this.speechRegionToken.expiry;
   }
 
-  private renewTokenBeforeExpiry() {
-    this.getTokenAsync().then(regionToken => {
-      this.speechRegionToken = regionToken;
-    });
+  private async renewTokenBeforeExpiryAsyn() {
+    const regionToken = await this.getTokenAsync();
+    this.speechRegionToken = regionToken;
   }
 
   private async getTokenAsync(): Promise<SpeechRegionToken> {
@@ -109,7 +108,7 @@ export default class BotEndpoint {
     if (this.speechRegionToken && !refresh && !this.willTokenExpireWithin(0)) {
       if (this.willTokenExpireWithin(this.speechRegionToken.tokenLife * 0.5)) {
         // Check if token is past half its life
-        this.renewTokenBeforeExpiry(); // Call and forget. No await since valid token still available
+        await this.renewTokenBeforeExpiryAsyn(); // Call and forget. No await since valid token still available
       }
 
       return {
