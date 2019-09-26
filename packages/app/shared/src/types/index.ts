@@ -38,7 +38,7 @@ export * from './fileTypes';
 export * from './notificationTypes';
 export * from './responseTypes';
 export * from './serverSettingsTypes';
+export * from './speechRegionToken';
 export * from './speechTypes';
 export * from './luisTypes';
 export * from './clientAwareSettings';
-export * from './speechRegionToken';

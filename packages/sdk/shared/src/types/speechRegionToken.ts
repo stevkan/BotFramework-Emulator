@@ -35,4 +35,5 @@ export interface SpeechRegionToken {
   access_Token: string;
   region: string;
   expiry: number;
+  tokenLife: number;
 }

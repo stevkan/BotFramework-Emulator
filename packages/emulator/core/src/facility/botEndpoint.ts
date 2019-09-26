@@ -41,9 +41,6 @@ import statusCodeFamily from '../utils/statusCodeFamily';
 
 // We will refresh if the token is going to expire within 5 minutes
 const TIME_TO_REFRESH = 5 * 60 * 1000;
-// We will refresh if the token is going to expire within 5 minutes
-const TIME_TO_REFRESH_SPEECH_TOKEN = 300000; // Refresh speech token 5 minutes before it expires (5 * 60 * 1000)
-const SPEECH_TOKEN_LIFE = 600000; // Token only valid for 10 Minutes (10 * 60 * 1000)
 
 export default class BotEndpoint {
   public accessToken?: string;
@@ -69,7 +66,7 @@ export default class BotEndpoint {
 
   private isTokenExpiringSoon(): boolean {
     const currentDateTime = new Date();
-    const timeFromNowMilliseconds = currentDateTime.getTime() + TIME_TO_REFRESH_SPEECH_TOKEN;
+    const timeFromNowMilliseconds = currentDateTime.getTime() + this.speechRegionToken.tokenLife * 0.5;
     return timeFromNowMilliseconds >= this.speechRegionToken.expiry;
   }
 
@@ -86,8 +83,7 @@ export default class BotEndpoint {
   }
 
   private async getTokenAsync(): Promise<SpeechRegionToken> {
-    const query = new URLSearchParams({ goodForInMinutes: SPEECH_TOKEN_LIFE } as any);
-    const res = await this.fetchWithAuth(new URL(`?${query.toString()}`, speechEndpoint.tokenEndpoint2).toString());
+    const res = await this.fetchWithAuth(new URL(speechEndpoint.tokenEndpoint2).toString());
 
     if (statusCodeFamily(res.status, 200)) {
       const body = (await res.json()) as SpeechTokenInfo;
@@ -97,6 +93,7 @@ export default class BotEndpoint {
           access_Token: body.access_Token,
           region: body.region,
           expiry: body.expiry,
+          tokenLife: body.tokenLife,
         };
 
         return this.speechRegionToken;
@@ -110,10 +107,7 @@ export default class BotEndpoint {
     }
   }
 
-  public async getSpeechToken(
-    refresh: boolean = false,
-    duration: number = TIME_TO_REFRESH_SPEECH_TOKEN
-  ): Promise<SpeechRegionToken> {
+  public async getSpeechToken(refresh: boolean = false): Promise<SpeechRegionToken> {
     if (this.speechRegionToken && !refresh && !this.isTokenExpired()) {
       if (this.isTokenExpiringSoon()) {
         this.renewTokenBeforeExpiry(); // Call and forget. No await since valid token still available
@@ -123,6 +117,7 @@ export default class BotEndpoint {
         access_Token: this.speechRegionToken.access_Token,
         region: this.speechRegionToken.region,
         expiry: this.speechRegionToken.expiry,
+        tokenLife: this.speechRegionToken.tokenLife,
       };
     }
 
