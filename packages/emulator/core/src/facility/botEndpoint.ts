@@ -83,7 +83,7 @@ export default class BotEndpoint {
   }
 
   private async getTokenAsync(): Promise<SpeechRegionToken> {
-    const res = await this.fetchWithAuth(new URL(speechEndpoint.tokenEndpoint2).toString());
+    const res = await this.fetchWithAuth(new URL(speechEndpoint.tokenEndpoint).toString());
 
     if (statusCodeFamily(res.status, 200)) {
       const body = (await res.json()) as SpeechTokenInfo;
