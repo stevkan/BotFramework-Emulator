@@ -54,6 +54,7 @@ import { RootState } from '../store';
 import { isSpeechEnabled } from '../../utils';
 import { ChatDocument } from '../reducers/chat';
 import { beginAdd } from '../actions/notificationActions';
+import { QnaMakerService } from 'botframework-config';
 
 const getConversationIdFromDocumentId = (state: RootState, documentId: string) => {
   return (state.chat.chats[documentId] || { conversationId: null }).conversationId;
@@ -169,9 +170,9 @@ export class ChatSagas {
       // No-op - this appId/pass combo is not provisioned to use the speech api
     }
 
-    if (speechRegionToken) {
+    if (speechRegionToken && speechRegionToken.accessToken) {
       const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
-        authorizationToken: speechRegionToken.access_Token,
+        authorizationToken: Promise.resolve(speechRegionToken.accessToken),
         region: speechRegionToken.region,
       });
       yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
