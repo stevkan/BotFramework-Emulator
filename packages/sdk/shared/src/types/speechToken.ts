@@ -34,7 +34,7 @@
 export interface SpeechTokenInfo {
   access_Token: string;
   region: string;
-  expiry: number;
+  expireAt: number;
   tokenLife: number;
   error: string;
   error_Description: string;

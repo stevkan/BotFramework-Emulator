@@ -31,9 +31,9 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-export interface SpeechRegionToken {
+export interface SpeechAuthenticationToken {
   access_Token: string;
   region: string;
-  expiry: number;
+  expireAt: number;
   tokenLife: number;
 }

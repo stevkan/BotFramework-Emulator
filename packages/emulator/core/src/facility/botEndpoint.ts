@@ -33,7 +33,7 @@
 
 import { URL, URLSearchParams } from 'url';
 
-import { BotEndpointOptions, SpeechTokenInfo, SpeechRegionToken } from '@bfemulator/sdk-shared';
+import { BotEndpointOptions, SpeechAuthenticationToken, SpeechTokenInfo } from '@bfemulator/sdk-shared';
 import * as HttpStatus from 'http-status-codes';
 
 import { authentication, speech as speechEndpoint, usGovernmentAuthentication } from '../authEndpoints';
@@ -48,7 +48,7 @@ export default class BotEndpoint {
   public speechToken?: string;
   public appId?: string;
   public appPassword?: string;
-  public speechRegionToken?: SpeechRegionToken;
+  public speechAuthenticationToken?: SpeechAuthenticationToken;
 
   constructor(
     public id?: string,
@@ -65,31 +65,29 @@ export default class BotEndpoint {
   }
 
   private willTokenExpireWithin(millisecondsToExpire: number): boolean {
-    const currentDateTime = new Date();
-    const timeFromNowMilliseconds = currentDateTime.getTime() + millisecondsToExpire;
-    return timeFromNowMilliseconds >= this.speechRegionToken.expiry;
+    return Date.now() + millisecondsToExpire >= this.speechAuthenticationToken.expireAt;
   }
 
   private async renewTokenBeforeExpiryAsyn() {
     const regionToken = await this.getTokenAsync();
-    this.speechRegionToken = regionToken;
+    this.speechAuthenticationToken = regionToken;
   }
 
-  private async getTokenAsync(): Promise<SpeechRegionToken> {
+  private async getTokenAsync(): Promise<SpeechAuthenticationToken> {
     const res = await this.fetchWithAuth(new URL(speechEndpoint.tokenEndpoint).toString());
 
     if (statusCodeFamily(res.status, 200)) {
       const body = (await res.json()) as SpeechTokenInfo;
 
       if (body.access_Token) {
-        this.speechRegionToken = {
+        this.speechAuthenticationToken = {
           access_Token: body.access_Token,
           region: body.region,
-          expiry: body.expiry,
+          expireAt: body.expireAt,
           tokenLife: body.tokenLife,
         };
 
-        return this.speechRegionToken;
+        return this.speechAuthenticationToken;
       } else {
         throw new Error(body.error || 'could not retrieve speech token');
       }
@@ -100,22 +98,22 @@ export default class BotEndpoint {
     }
   }
 
-  public async getSpeechToken(refresh: boolean = false): Promise<SpeechRegionToken> {
+  public async getSpeechToken(refresh: boolean = false): Promise<SpeechAuthenticationToken> {
     if (!this.msaAppId || !this.msaPassword) {
       throw new Error('bot must have Microsoft App ID and password');
     }
 
-    if (this.speechRegionToken && !refresh && !this.willTokenExpireWithin(0)) {
-      if (this.willTokenExpireWithin(this.speechRegionToken.tokenLife * 0.5)) {
+    if (this.speechAuthenticationToken && !refresh && Date.now() > this.speechAuthenticationToken.expireAt) {
+      if (this.willTokenExpireWithin(this.speechAuthenticationToken.tokenLife / 2)) {
         // Check if token is past half its life
         await this.renewTokenBeforeExpiryAsyn(); // Call and forget. No await since valid token still available
       }
 
       return {
-        access_Token: this.speechRegionToken.access_Token,
-        region: this.speechRegionToken.region,
-        expiry: this.speechRegionToken.expiry,
-        tokenLife: this.speechRegionToken.tokenLife,
+        access_Token: this.speechAuthenticationToken.access_Token,
+        region: this.speechAuthenticationToken.region,
+        expireAt: this.speechAuthenticationToken.expireAt,
+        tokenLife: this.speechAuthenticationToken.tokenLife,
       };
     }
 

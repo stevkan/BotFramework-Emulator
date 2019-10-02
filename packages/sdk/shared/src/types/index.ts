@@ -50,7 +50,7 @@ export * from './error';
 export * from './errorCodes';
 export * from './emulatorMode';
 export * from './logger';
-export * from './speechRegionToken';
+export * from './speechAuthenticationToken';
 export * from './speechToken';
 export * from './transcriptRecord';
 export * from './user';
