@@ -33,8 +33,13 @@
 import * as Electron from 'electron';
 import { MenuItemConstructorOptions } from 'electron';
 import { Activity } from 'botframework-schema';
-import { SharedConstants, ValueTypes, newNotification, SpeechRegionToken } from '@bfemulator/app-shared';
-import { CommandServiceImpl, CommandServiceInstance, ConversationService } from '@bfemulator/sdk-shared';
+import { SharedConstants, ValueTypes, newNotification } from '@bfemulator/app-shared';
+import {
+  CommandServiceImpl,
+  CommandServiceInstance,
+  ConversationService,
+  SpeechRegionToken,
+} from '@bfemulator/sdk-shared';
 import { IEndpointService } from 'botframework-config/lib/schema';
 import { createCognitiveServicesSpeechServicesPonyfillFactory } from 'botframework-webchat';
 import { createStore as createWebChatStore } from 'botframework-webchat-core';
@@ -170,9 +175,9 @@ export class ChatSagas {
       // No-op - this appId/pass combo is not provisioned to use the speech api
     }
 
-    if (speechRegionToken && speechRegionToken.accessToken) {
+    if (speechRegionToken) {
       const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
-        authorizationToken: Promise.resolve(speechRegionToken.accessToken),
+        authorizationToken: () => Promise.resolve(speechRegionToken.access_Token),
         region: speechRegionToken.region,
       });
       yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
