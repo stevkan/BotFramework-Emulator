@@ -175,7 +175,7 @@ export class ChatSagas {
       // No-op - this appId/pass combo is not provisioned to use the speech api
     }
 
-    if (speechRegionToken) {
+    if (speechRegionToken && speechRegionToken.access_Token && speechRegionToken.region) {
       const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
         authorizationToken: () => Promise.resolve(speechRegionToken.access_Token),
         region: speechRegionToken.region,
