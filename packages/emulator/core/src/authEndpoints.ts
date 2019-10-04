@@ -57,6 +57,6 @@ export const v32Authentication = {
 };
 
 export const speech = {
-  // Access token for Cognitive Services Api
+  // Access token for Cognitive Services API
   tokenEndpoint: 'http://login.botframework.com/v3/speechtoken/speechservices',
 };
