@@ -163,25 +163,25 @@ export class ChatSagas {
     // If an existing factory is found, refresh the token
     const existingFactory: string = yield select(getWebSpeechFactoryForDocumentId, documentId);
     const { GetSpeechToken: command } = SharedConstants.Commands.Emulator;
-    let speechAuthenticationToken: SpeechRegionToken;
+
     try {
-      speechAuthenticationToken = yield call(
+      let speechAuthenticationToken: Promise<string> = yield call(
         [ChatSagas.commandService, ChatSagas.commandService.remoteCall],
         command,
         endpoint.id,
         !!existingFactory
       );
+
+      const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
+        authorizationToken: speechAuthenticationToken,
+        region: 'westus', // Currently prod is in only westus Speech Services region
+      });
+
+      yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
     } catch (e) {
       // No-op - this appId/pass combo is not provisioned to use the speech api
     }
 
-    if (speechAuthenticationToken && speechAuthenticationToken.access_Token && speechAuthenticationToken.region) {
-      const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
-        authorizationToken: () => Promise.resolve(speechAuthenticationToken.access_Token),
-        region: speechAuthenticationToken.region,
-      });
-      yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
-    }
     yield put(updatePendingSpeechTokenRetrieval(false));
     if (resolver) {
       resolver();
