@@ -165,7 +165,7 @@ export class ChatSagas {
     const { GetSpeechToken: command } = SharedConstants.Commands.Emulator;
 
     try {
-      let speechAuthenticationToken: Promise<string> = yield call(
+      let speechAuthenticationToken = yield call(
         [ChatSagas.commandService, ChatSagas.commandService.remoteCall],
         command,
         endpoint.id,
@@ -173,8 +173,8 @@ export class ChatSagas {
       );
 
       const factory = yield call(createCognitiveServicesSpeechServicesPonyfillFactory, {
-        authorizationToken: speechAuthenticationToken,
-        region: 'westus', // Currently prod is in only westus Speech Services region
+        authorizationToken: speechAuthenticationToken.access_Token,
+        region: speechAuthenticationToken.region, // Currently prod is in only westus Speech Services region
       });
 
       yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store

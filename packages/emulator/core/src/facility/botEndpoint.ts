@@ -70,10 +70,10 @@ export default class BotEndpoint {
 
   private async renewTokenBeforeExpiryAsyn() {
     const regionToken = await this.getTokenAsync();
-    this.speechAuthenticationToken.access_Token = regionToken;
+    this.speechAuthenticationToken = regionToken;
   }
 
-  private async getTokenAsync(): Promise<string> {
+  private async getTokenAsync(): Promise<SpeechAuthenticationToken> {
     const res = await this.fetchWithAuth(new URL(speechEndpoint.tokenEndpoint).toString());
 
     if (statusCodeFamily(res.status, 200)) {
@@ -87,7 +87,7 @@ export default class BotEndpoint {
           tokenLife: body.tokenLife,
         };
 
-        return this.speechAuthenticationToken.access_Token;
+        return this.speechAuthenticationToken;
       } else {
         throw new Error(body.error || 'could not retrieve speech token');
       }
@@ -98,7 +98,7 @@ export default class BotEndpoint {
     }
   }
 
-  public async getSpeechToken(refresh: boolean = false): Promise<string> {
+  public async getSpeechToken(refresh: boolean = false): Promise<SpeechAuthenticationToken> {
     if (!this.msaAppId || !this.msaPassword) {
       throw new Error('bot must have Microsoft App ID and password');
     }
@@ -109,7 +109,7 @@ export default class BotEndpoint {
         await this.renewTokenBeforeExpiryAsyn(); // Call and forget. No await since valid token still available
       }
 
-      return this.speechAuthenticationToken.access_Token;
+      return this.speechAuthenticationToken;
     }
 
     return await this.getTokenAsync();
