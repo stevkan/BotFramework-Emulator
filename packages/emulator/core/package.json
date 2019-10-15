@@ -56,6 +56,7 @@
     "@babel/runtime": "^7.1.5",
     "@bfemulator/app-shared": "^1.0.0",
     "@bfemulator/sdk-shared": "^1.0.0",
+    "@types/ws": "^6.0.3",
     "botframework-connector": "^4.3.4",
     "botframework-schema": "^4.3.4",
     "debug": "^3.1.0",
@@ -67,7 +68,8 @@
     "on-error-resume-next": "^1.0.0",
     "rsa-pem-from-mod-exp": "^0.8.4",
     "simple-update-in": "^1.1.1",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "ws": "^7.1.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.0",

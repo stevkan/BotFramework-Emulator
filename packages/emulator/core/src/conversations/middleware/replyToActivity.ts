@@ -35,6 +35,7 @@ import { ResourceResponse } from '@bfemulator/sdk-shared';
 import { Activity } from 'botframework-schema';
 import * as HttpStatus from 'http-status-codes';
 import * as Restify from 'restify';
+import { Server } from 'ws';
 
 import { BotEmulator } from '../../botEmulator';
 import OAuthLinkEncoder from '../../utils/oauthLinkEncoder';
@@ -45,13 +46,30 @@ export default function replyToActivity(botEmulator: BotEmulator) {
   return (req: Restify.Request, res: Restify.Response, next: Restify.Next): any => {
     const activity = req.body as Activity;
     const conversationParameters: ConversationAPIPathParameters = req.params;
+    let { webSocket } = botEmulator as any;
+    if (!webSocket) {
+      // start the websocket server up
+      webSocket = new Server({ port: 5005 });
+
+      console.log(`Socket running on ws://localhost:${5005}`);
+
+      (webSocket as Server).on('connection', (socket, req) => {
+        console.log('got connection');
+
+        socket.on('message', data => {
+          if (data === '') {
+            console.log('Got ping from DLJS');
+          }
+        });
+      });
+    }
 
     try {
       activity.id = activity.id || null;
       activity.replyToId = req.params.activityId;
 
       const continuation = function(): void {
-        const response: ResourceResponse = (req as any).conversation.postActivityToUser(activity);
+        const response: ResourceResponse = (req as any).conversation.postActivityToUser(activity, false, webSocket);
 
         res.send(HttpStatus.OK, response);
         res.end();

@@ -243,9 +243,12 @@ export class Emulator extends React.Component<EmulatorProps, {}> {
     // TODO: We need to use encoded token because we need to pass both endpoint ID and conversation ID
     //       We should think about a better model to pass conversation ID from Web Chat to emulator core
     const directLine = createDirectLine({
+      token: 'mytoken',
+      conversationId: options.conversationId,
       secret: encodedOptions,
       domain: `${this.props.url}/v3/directline`,
-      webSocket: false,
+      webSocket: true,
+      streamUrl: 'ws://localhost:5005',
     });
 
     this.props.newConversation(props.documentId, {
