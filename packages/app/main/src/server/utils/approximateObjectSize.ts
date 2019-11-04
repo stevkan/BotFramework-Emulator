@@ -31,31 +31,45 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+export default function approximateObjectSize(object: any, cache: any[] = []): number {
+  switch (typeof object) {
+    case 'boolean':
+      return 4;
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+    case 'number':
+      return 8;
 
-import getSessionId from './middleware/getSessionId';
+    case 'string':
+      return object.length * 2;
 
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
+    case 'object': {
+      let bytes = 0;
 
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
+      cache.push(object);
 
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
-  });
+      for (const i in object) {
+        if (!object.hasOwnProperty(i)) {
+          continue;
+        }
+        const value = object[i];
+
+        // check for infinite recursion
+        if (typeof value === 'object' && value !== null) {
+          if (cache.indexOf(value) !== -1) {
+            continue;
+          }
+
+          cache.push(value);
+        }
+
+        bytes += approximateObjectSize(value, cache);
+      }
+
+      return bytes;
+    }
+
+    default:
+      // value is null, undefined, or a function
+      return 0;
+  }
 }

@@ -31,31 +31,31 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import { LogItem, LogItemType, LogLevel, LogService, TextLogItem } from '@bfemulator/sdk-shared';
+import log from 'npmlog';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+function logLevel(logLevelArg: LogLevel) {
+  switch (logLevelArg) {
+    case LogLevel.Error:
+      return log.error;
 
-import getSessionId from './middleware/getSessionId';
+    case LogLevel.Info:
+      return log.info;
 
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
+    case LogLevel.Warn:
+      return log.warn;
 
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
+    default:
+      return log.silly;
+  }
+}
 
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
+export class ConsoleLogService implements LogService {
+  public logToChat(conversationId: string, ...items: LogItem<TextLogItem>[]) {
+    items.forEach(message => {
+      if (message.type === LogItemType.Text) {
+        logLevel(message.payload.level)(conversationId ? conversationId : '', message.payload.text);
+      }
     });
-    res.write(body);
-    res.end();
-  });
+  }
 }

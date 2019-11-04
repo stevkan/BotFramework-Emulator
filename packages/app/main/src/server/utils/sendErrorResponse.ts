@@ -31,31 +31,33 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+import { APIException, ErrorCodes, ErrorResponse } from '@bfemulator/sdk-shared';
+import * as HttpStatus from 'http-status-codes';
 import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+import createErrorResponse from './createResponse/error';
 
-import getSessionId from './middleware/getSessionId';
+function exceptionToAPIException(exception: any): APIException {
+  if (exception.error && exception.statusCode) {
+    return exception;
+  } else {
+    return {
+      error: createErrorResponse(ErrorCodes.ServiceError, exception.message),
+      statusCode: HttpStatus.BAD_REQUEST,
+    };
+  }
+}
 
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
+export default function sendErrorResponse(
+  req: Restify.Request,
+  res: Restify.Response,
+  next: Restify.Next,
+  exception: any
+): ErrorResponse {
+  const apiException = exceptionToAPIException(exception);
 
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
+  res.send(apiException.statusCode, apiException.error);
+  res.end();
 
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
-  });
+  return apiException.error;
 }

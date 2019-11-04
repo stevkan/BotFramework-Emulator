@@ -31,31 +31,41 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import { ErrorCodes } from '@bfemulator/sdk-shared';
+import { AttachmentData } from 'botframework-schema';
+import * as HttpStatus from 'http-status-codes';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+import createAPIException from '../utils/createResponse/apiException';
+import uniqueId from '../utils/uniqueId';
 
-import getSessionId from './middleware/getSessionId';
+export class Attachments {
+  private attachments: { [key: string]: AttachmentData } = {};
 
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
+  public getAttachmentData(id: string): AttachmentData {
+    return this.attachments[id];
+  }
 
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
+  public uploadAttachment(attachmentData: AttachmentData): string {
+    if (!attachmentData.type) {
+      throw createAPIException(
+        HttpStatus.BAD_REQUEST,
+        ErrorCodes.MissingProperty,
+        'You must specify type property for the attachment'
+      );
+    }
 
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
-  });
+    if (!attachmentData.originalBase64) {
+      throw createAPIException(
+        HttpStatus.BAD_REQUEST,
+        ErrorCodes.MissingProperty,
+        'You must specify originalBase64 byte[] for the attachment'
+      );
+    }
+
+    const attachment: any = { ...attachmentData, id: uniqueId() };
+
+    this.attachments[attachment.id] = attachment;
+
+    return attachment.id;
+  }
 }

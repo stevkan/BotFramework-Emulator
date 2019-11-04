@@ -31,31 +31,20 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import { Logger } from '@bfemulator/sdk-shared';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+import { Attachments } from './attachments';
+import { BotState } from './botState';
+import { ConversationSet } from './conversationSet';
+import { EndpointSet } from './endpointSet';
+import { Users } from './users';
 
-import getSessionId from './middleware/getSessionId';
-
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
-
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
-
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
-  });
+export class ServerState {
+  public attachments = new Attachments();
+  public botState = new BotState(); // init via constructor?
+  public conversations = new ConversationSet();
+  public endpoints = new EndpointSet(); // init
+  public logger: Logger;
+  public users = new Users();
+  public locale?: string;
 }

@@ -31,31 +31,16 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import uniqueId from './uniqueId';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+describe('uniqueId', () => {
+  it('should generate unique ids', () => {
+    const id1 = uniqueId();
+    const id2 = uniqueId();
+    const id3 = uniqueId();
 
-import getSessionId from './middleware/getSessionId';
-
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
-
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
-
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
+    expect(id1).not.toBe(id2);
+    expect(id1).not.toBe(id3);
+    expect(id2).not.toBe(id3);
   });
-}
+});

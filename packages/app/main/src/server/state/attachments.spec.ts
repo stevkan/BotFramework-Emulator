@@ -31,31 +31,39 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import { Attachments } from './attachments';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+jest.mock('../utils/uniqueId', () => jest.fn(() => '1234'));
+jest.mock('../utils/createResponse/apiException', () => jest.fn(() => 'I am an error!'));
 
-import getSessionId from './middleware/getSessionId';
+describe('Attachments', () => {
+  const attachments = new Attachments();
 
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
+  it('should upload and get attachments', () => {
+    const attachmentData: any = {
+      type: 'someType',
+      originalBase64: [0x00],
+      data: 123,
+    };
+    const attachmentId = attachments.uploadAttachment(attachmentData);
+    expect(attachmentId).toBe('1234');
 
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
-
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
+    const retrievedAttachment = attachments.getAttachmentData(attachmentId);
+    expect(retrievedAttachment).toEqual({ ...attachmentData, id: attachmentId });
   });
-}
+
+  it('should throw when no attachment type is supplied', () => {
+    const attachmentData: any = {
+      data: 123,
+    };
+    expect(() => attachments.uploadAttachment(attachmentData)).toThrow('I am an error!');
+  });
+
+  it('should throw when no originalBase64 byte array is supplied', () => {
+    const attachmentData: any = {
+      data: 123,
+      type: 'someType',
+    };
+    expect(() => attachments.uploadAttachment(attachmentData)).toThrow('I am an error!');
+  });
+});

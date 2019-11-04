@@ -31,31 +31,39 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import OAuthClientEncoder from './oauthClientEncoder';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+describe('OAuthClientEncoder', () => {
+  it('should initialize with a conversation id', () => {
+    const activity: any = { conversation: { id: 'someId' } };
+    const encoder = new OAuthClientEncoder(activity);
 
-import getSessionId from './middleware/getSessionId';
-
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
-
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
-
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
+    expect((encoder as any)._conversationId).toBe(activity.conversation.id);
   });
-}
+
+  it('should initialize without a conversation id', () => {
+    const activity: any = { conversation: {} };
+    const encoder = new OAuthClientEncoder(activity);
+
+    expect((encoder as any)._conversationId).toBe(undefined);
+  });
+
+  it('should visit a card action', () => {
+    const encoder = new OAuthClientEncoder(null);
+
+    expect((encoder as any).visitCardAction(null)).toBe(null);
+  });
+
+  it('should visit an oauth card action', () => {
+    const activity: any = { conversation: { id: 'someId' } };
+    const connectionName = 'someConnectionName';
+    const cardAction: any = { type: 'signin' };
+    const encodedOAuthUrl =
+      OAuthClientEncoder.OAuthEmulatorUrlProtocol + '//' + connectionName + '&&&' + activity.conversation.id;
+    const encoder = new OAuthClientEncoder(activity);
+    (encoder as any).visitOAuthCardAction(connectionName, cardAction);
+
+    expect(cardAction.type).toBe('openUrl');
+    expect(cardAction.value).toEqual(encodedOAuthUrl);
+  });
+});

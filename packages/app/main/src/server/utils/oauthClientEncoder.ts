@@ -31,31 +31,31 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-import * as Restify from 'restify';
-import { RequestHandler, Server } from 'restify';
+import { Activity, CardAction } from 'botframework-schema';
 
-import { BotEmulator } from '../botEmulator';
-import getFacility from '../middleware/getFacility';
-import getRouteName from '../middleware/getRouteName';
+import ActivityVisitor from './activityVisitor';
 
-import getSessionId from './middleware/getSessionId';
+export default class OAuthClientEncoder extends ActivityVisitor {
+  public static OAuthEmulatorUrlProtocol: string = 'oauth:';
 
-export default function registerRoutes(botEmulator: BotEmulator, server: Server, uses: RequestHandler[]) {
-  const facility = getFacility('directline');
+  private _conversationId: string;
 
-  server.get('/v3/directline/session/getsessionid', facility, getRouteName('getSessionId'), getSessionId(botEmulator));
+  constructor(activity: Activity) {
+    super();
+    this._conversationId = activity && activity.conversation ? activity.conversation.id : undefined;
+  }
 
-  server.get('/v4/token', (req: Restify.Request, res: Restify.Response) => {
-    const body =
-      '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-      '<title>Botframework Emulator</title></head>' +
-      '<body><!--This page is used as the redirect from the AAD auth for ABS and is required-->' +
-      '</body></html>';
-    res.writeHead(200, {
-      'Content-Length': Buffer.byteLength(body),
-      'Content-Type': 'text/html',
-    });
-    res.write(body);
-    res.end();
-  });
+  protected visitCardAction(cardAction: CardAction) {
+    return null;
+  }
+
+  protected visitOAuthCardAction(connectionName: string, cardAction: CardAction) {
+    if (this._conversationId && cardAction && cardAction.type === 'signin' && !cardAction.value) {
+      const url = OAuthClientEncoder.OAuthEmulatorUrlProtocol + '//' + connectionName + '&&&' + this._conversationId;
+
+      // change the card action to a special URL for the emulator
+      cardAction.type = 'openUrl';
+      cardAction.value = url;
+    }
+  }
 }
